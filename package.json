@@ -22,24 +22,26 @@
     "@supabase/supabase-js": "^2.108.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
+    "date-fns": "^4.4.0",
     "groq-sdk": "^1.2.1",
     "lucide-react": "^0.475.0",
     "next": "^16.2.9",
+    "postcss": "^8.5.15",
     "react": "^19.2.7",
     "react-day-picker": "^9.6.3",
     "react-dom": "^19.2.7",
+    "react-hook-form": "^7.80.0",
     "tailwind-merge": "^3.0.2",
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.0.14",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@tailwindcss/postcss": "^4.3.1",
+    "@types/node": "^20.19.43",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
-    "tailwindcss": "^4.0.14",
-    "typescript": "^5"
+    "tailwindcss": "^4.3.1",
+    "typescript": "^5.9.3"
   }
 }

@@ -8,13 +8,10 @@ import {
 
 import { getListings } from "./tools/getListing.js";
 import { searchListings } from "./tools/searchListings.js";
-
 const PORT = process.env.PORT || 3001;
-
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 console.log("Loaded getListings:", typeof getListings);
 console.log("Loaded searchListings:", typeof searchListings);
 
