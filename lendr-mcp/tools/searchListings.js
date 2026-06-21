@@ -1,6 +1,8 @@
 import { supabase } from "../supabase.js";
 
-export async function searchListings(keyword) {
+
+
+export async function searchListings(keyword = "") {
   const { data, error } = await supabase
     .from("items")
     .select("*")

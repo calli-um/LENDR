@@ -1,8 +1,6 @@
 import express from "express";
 import cors from "cors";
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -17,210 +15,149 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+console.log("Loaded getListings:", typeof getListings);
+console.log("Loaded searchListings:", typeof searchListings);
+
 /**
  * =========================
- * MCP SERVER
+ * TOOL DEFINITIONS
  * =========================
  */
-const server = new Server(
+const TOOLS = [
   {
-    name: "lendr-mcp",
-    version: "1.0.0",
+    name: "get_listings",
+    description: "Get rental listings",
+    inputSchema: {
+      type: "object",
+      properties: {
+        keyword: { type: "string" },
+        limit: { type: "number" },
+      },
+    },
   },
   {
-    capabilities: {
-      tools: {},
+    name: "search_listings",
+    description: "Search listings",
+    inputSchema: {
+      type: "object",
+      properties: {
+        keyword: { type: "string" },
+        limit: { type: "number" },
+      },
     },
-  }
-);
+  },
+];
 
 /**
  * =========================
- * LIST TOOLS (FIXED)
+ * MCP LOGIC
  * =========================
  */
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: [
-      {
-        name: "get_listings",
-        description: "Get rental listings",
-        inputSchema: {
-          type: "object",
-          properties: {
-            keyword: { type: "string" },
-            limit: { type: "number" },
-          },
-        },
-      },
-      {
-        name: "search_listings",
-        description: "Search listings",
-        inputSchema: {
-          type: "object",
-          properties: {
-            keyword: { type: "string" },
-            limit: { type: "number" },
-          },
-        },
-      },
-    ],
-  };
-});
+async function runTool(name, args = {}) {
+  console.log("Running tool:", name);
+  console.log("Args:", args);
 
-/**
- * =========================
- * CALL TOOL (FIXED)
- * =========================
- */
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+  if (name === "get_listings") {
+    const keyword = args.keyword || "";
+    const limit = args.limit || 10;
 
-  try {
-    if (name === "get_listings") {
-      const keyword = args?.keyword || "";
-      const limit = args?.limit || 10;
-
-      const result = keyword
-        ? await searchListings(keyword)
-        : await getListings(limit);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(result),
-          },
-        ],
-      };
-    }
-
-    if (name === "search_listings") {
-      const result = await searchListings(args?.keyword || "");
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(result),
-          },
-        ],
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({ error: "Unknown tool" }),
-        },
-      ],
-    };
-  } catch (err) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: "Tool execution failed",
-            details: String(err),
-          }),
-        },
-      ],
-    };
+    return keyword
+      ? await searchListings(keyword)
+      : await getListings(limit);
   }
-});
+
+  if (name === "search_listings") {
+    return await searchListings(args.keyword || "");
+  }
+
+  throw new Error(`Unknown tool: ${name}`);
+}
 
 /**
  * =========================
- * HTTP WRAPPER (FOR NEXT.JS)
+ * HEALTH
  * =========================
  */
 app.get("/health", (_, res) => {
   res.json({ ok: true });
 });
 
+/**
+ * =========================
+ * MCP ENDPOINT
+ * =========================
+ */
 app.post("/mcp", async (req, res) => {
   try {
     const { method, params } = req.body;
-    console.log("/mcp called", { method, params });
 
-
-    // The MCP SDK Server instance is transport-dependent.
-    // Calling `server.request()` without an active MCP transport/connection
-    // causes: "Error: Not connected".
-    //
-    // Since this server already has request handlers registered for
-    // ListToolsRequestSchema and CallToolRequestSchema, route the HTTP payload
-    // directly to those handlers.
+    console.log("[MCP CALL]");
+    console.log("Method:", method);
+    console.log("Params:", params);
 
     if (method === "tools/list") {
-      // Bypass MCP SDK request pipeline.
-      // Return the same tool definitions we register via setRequestHandler().
-      return res.json({
-        tools: [
-          {
-            name: "get_listings",
-            description: "Get rental listings",
-            inputSchema: {
-              type: "object",
-              properties: {
-                keyword: { type: "string" },
-                limit: { type: "number" },
-              },
-            },
-          },
-          {
-            name: "search_listings",
-            description: "Search listings",
-            inputSchema: {
-              type: "object",
-              properties: {
-                keyword: { type: "string" },
-                limit: { type: "number" },
-              },
-            },
-          },
-        ],
-      });
+      return res.json({ tools: TOOLS });
     }
-
-
 
     if (method === "tools/call") {
       const name = params?.name;
       const args = params?.arguments ?? {};
 
-      // Bypass MCP SDK request pipeline.
-      if (name === "get_listings") {
-        const keyword = args?.keyword || "";
-        const limit = args?.limit ?? 10;
-        const result = keyword ? await searchListings(keyword) : await getListings(limit);
-        return res.json({ content: [{ type: "text", text: JSON.stringify(result) }] });
-      }
+      const result = await runTool(name, args);
 
-      if (name === "search_listings") {
-        const result = await searchListings(args?.keyword || "");
-        return res.json({ content: [{ type: "text", text: JSON.stringify(result) }] });
-      }
-
-      return res.json({ content: [{ type: "text", text: JSON.stringify({ error: "Unknown tool" }) }] });
+      return res.json({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result),
+          },
+        ],
+      });
     }
-
 
     return res.status(400).json({
       error: "Invalid method",
-      details: `Unsupported method: ${method}`,
+      details: method,
     });
   } catch (err) {
+    console.error("\n========== FULL MCP ERROR ==========");
+    console.error(err);
+    console.error("Stack:");
+    console.error(err?.stack);
+    console.error("====================================\n");
+
     return res.status(500).json({
       error: "MCP error",
-      details: String(err),
+      details: err?.message || String(err),
     });
   }
 });
 
+/**
+ * =========================
+ * ENV DEBUG
+ * =========================
+ */
+function envSummary() {
+  const required = [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+  ];
 
+  const present = required
+    .filter((k) => process.env[k])
+    .sort();
+
+  console.log("[lendr-mcp] Env present:", present);
+}
+
+envSummary();
+
+/**
+ * =========================
+ * START SERVER
+ * =========================
+ */
 app.listen(PORT, () => {
   console.log(`🚀 LENDR MCP running on http://localhost:${PORT}`);
 });
