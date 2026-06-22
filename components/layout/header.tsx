@@ -1,16 +1,43 @@
 import Link from "next/link";
-import {
-  Heart,
-  Calendar,
-  Plus,
-  LogOut,
-  User,
-  Settings,
-} from "lucide-react";
+import { Heart, Calendar, Plus, User, Settings } from "lucide-react";
+import { LogoutButton } from "@/components/layout/logout-button";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/actions/auth";
 import { getWishlistCount } from "@/lib/actions/wishlist";
-import { logout } from "@/lib/actions/auth";
+
+/** A small wrapper that shows a CSS tooltip on hover — no JS needed. */
+function NavIcon({
+  href,
+  label,
+  children,
+  extraClass = "",
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+  extraClass?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`group relative rounded-md p-2 hover:bg-gray-100 ${extraClass}`}
+      aria-label={label}
+    >
+      {children}
+      {/* Tooltip */}
+      <span
+        className="
+          pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2
+          whitespace-nowrap rounded-md bg-gray-800 px-2 py-1 text-xs text-white
+          opacity-0 shadow-md transition-opacity duration-150
+          group-hover:opacity-100
+        "
+      >
+        {label}
+      </span>
+    </Link>
+  );
+}
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -32,37 +59,34 @@ export async function Header() {
                   <span className="hidden sm:inline">List item</span>
                 </Button>
               </Link>
-              <Link
-                href="/cart"
-                className="relative rounded-md p-2 hover:bg-gray-100"
-              >
+
+              {/* Favourites */}
+              <NavIcon href="/cart" label="Favourites" extraClass="relative">
                 <Heart className="h-5 w-5" />
                 {wishlistCount > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-xs text-white">
                     {wishlistCount}
                   </span>
                 )}
-              </Link>
-              <Link
-                href="/bookings"
-                className="rounded-md p-2 hover:bg-gray-100"
-              >
+              </NavIcon>
+
+              {/* Bookings */}
+              <NavIcon href="/bookings" label="Bookings">
                 <Calendar className="h-5 w-5" />
-              </Link>
-              <Link
-                href={`/profile/${user.id}`}
-                className="rounded-md p-2 hover:bg-gray-100"
-              >
+              </NavIcon>
+
+              {/* Profile */}
+              <NavIcon href={`/profile/${user.id}`} label="Profile">
                 <User className="h-5 w-5" />
-              </Link>
-              <Link href="/settings" className="rounded-md p-2 hover:bg-gray-100">
+              </NavIcon>
+
+              {/* Settings */}
+              <NavIcon href="/settings" label="Settings">
                 <Settings className="h-5 w-5" />
-              </Link>
-              <form action={logout}>
-                <Button variant="ghost" size="icon" type="submit">
-                  <LogOut className="h-5 w-5" />
-                </Button>
-              </form>
+              </NavIcon>
+
+              {/* Logout */}
+              <LogoutButton />
             </>
           ) : (
             <>

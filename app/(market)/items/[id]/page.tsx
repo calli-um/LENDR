@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getItem } from "@/lib/actions/items";
+import { getItem, getItemBookings } from "@/lib/actions/items";
 import { getCurrentUser } from "@/lib/actions/auth";
 import { isInWishlist } from "@/lib/actions/wishlist";
 import { ImageGallery } from "@/components/items/image-gallery";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VerificationBadge } from "@/components/profile/verification-badge";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatDate } from "@/lib/utils";
 import { ItemDetailActions } from "@/components/items/item-detail-actions";
 import { deleteListing } from "@/lib/actions/items";
 import { Button } from "@/components/ui/button";
+import { CalendarX2 } from "lucide-react";
 
 export default async function ItemDetailPage({
   params,
@@ -18,10 +19,11 @@ export default async function ItemDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [item, user, saved] = await Promise.all([
+  const [item, user, saved, bookings] = await Promise.all([
     getItem(id),
     getCurrentUser(),
     isInWishlist(id),
+    getItemBookings(id),
   ]);
 
   if (!item || item.status !== "active") {
@@ -69,6 +71,36 @@ export default async function ItemDetailPage({
               />
             </div>
           </Link>
+        )}
+
+        {/* Booked date slots */}
+        {bookings.length > 0 && (
+          <div className="rounded-xl border border-orange-100 bg-orange-50 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <CalendarX2 className="h-4 w-4 text-orange-500" />
+              <h2 className="text-sm font-semibold text-orange-700">
+                Booked / Requested Dates
+              </h2>
+            </div>
+            <ul className="space-y-2">
+              {bookings.map((b) => (
+                <li key={b.id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700">
+                    {formatDate(b.start_date)} – {formatDate(b.end_date)}
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      b.status === "confirmed"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-orange-100 text-orange-600"
+                    }`}
+                  >
+                    {b.status === "confirmed" ? "Confirmed" : "Pending"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {isOwner ? (

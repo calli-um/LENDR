@@ -179,6 +179,52 @@ export async function getItems(search?: string, category?: string) {
   return data ?? [];
 }
 
+export async function getItemsWithBookingCounts(search?: string, category?: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let query = supabase
+    .from("items")
+    .select("*, item_images(*), profiles:profiles!items_owner_id_fkey(*), bookings(id)")
+    .eq("status", "active")
+    .order("created_at", { ascending: false });
+
+  // Hide the signed-in user's own listings from their feed
+  if (user) {
+    query = query.neq("owner_id", user.id);
+  }
+
+  if (category && category !== "all") {
+    query = query.eq("category", category);
+  }
+
+  if (search) {
+    query = query.or(
+      `title.ilike.%${search}%,description.ilike.%${search}%,location.ilike.%${search}%`
+    );
+  }
+
+  const { data, error } = await query;
+  if (error) return [];
+  return (data ?? []).map((item) => ({
+    ...item,
+    booking_count: Array.isArray(item.bookings) ? item.bookings.length : 0,
+  }));
+}
+
+export async function getItemBookings(itemId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("id, start_date, end_date, status")
+    .eq("item_id", itemId)
+    .in("status", ["pending", "confirmed"])
+    .order("start_date", { ascending: true });
+
+  if (error) return [];
+  return data ?? [];
+}
+
 export async function getItem(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase

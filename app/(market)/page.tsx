@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getItems } from "@/lib/actions/items";
+import { getItemsWithBookingCounts } from "@/lib/actions/items";
 import { ItemGrid } from "@/components/items/item-grid";
 import { HomeFilters } from "@/components/items/home-filters";
 import { CATEGORIES } from "@/lib/utils";
@@ -10,7 +10,7 @@ export default async function HomePage({
   searchParams: Promise<{ q?: string; category?: string }>;
 }) {
   const params = await searchParams;
-  const items = await getItems(params.q, params.category);
+  const items = await getItemsWithBookingCounts(params.q, params.category);
 
   return (
     <div className="space-y-8">

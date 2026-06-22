@@ -5,7 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import type { ItemWithImages } from "@/types/database";
 
-export function ItemCard({ item }: { item: ItemWithImages }) {
+export function ItemCard({
+  item,
+  bookingCount = 0,
+}: {
+  item: ItemWithImages;
+  bookingCount?: number;
+}) {
   const imageUrl = item.item_images?.[0]?.url;
 
   return (
@@ -24,6 +30,11 @@ export function ItemCard({ item }: { item: ItemWithImages }) {
             <div className="flex h-full items-center justify-center text-gray-400">
               No image
             </div>
+          )}
+          {bookingCount > 0 && (
+            <span className="absolute bottom-2 left-2 rounded-full bg-orange-500 px-2.5 py-0.5 text-xs font-semibold text-white shadow">
+              🔖 {bookingCount} booking request{bookingCount !== 1 ? "s" : ""}
+            </span>
           )}
         </div>
         <CardContent className="p-4">

@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatPrice(amount: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "PKR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(amount);
@@ -29,6 +29,7 @@ export const CATEGORIES = [
   "Outdoor",
   "Party",
   "Home",
+  "Fashion",
   "Other",
 ] as const;
 
